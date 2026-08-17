@@ -1,0 +1,466 @@
+{
+  "info": {
+    "name": "Society Management API",
+    "description": "Full API collection for the Society Management System (auth, societies, users, flats, gate visitor entries, delivery/Zomato-Swiggy entries, photo upload).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080/api" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register Society (creates Society Admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/register-society", "host": ["{{baseUrl}}"], "path": ["auth", "register-society"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"societyName\": \"Green Valley Apartments\",\n  \"registrationNumber\": \"REG-GV-2026-002\",\n  \"address\": \"123 MG Road\",\n  \"city\": \"Bengaluru\",\n  \"state\": \"Karnataka\",\n  \"pincode\": \"560001\",\n  \"societyContactPhone\": \"9876543210\",\n  \"adminName\": \"Society Admin\",\n  \"adminEmail\": \"admin@newsociety.com\",\n  \"adminPassword\": \"Admin@123\",\n  \"adminPhone\": \"9876543211\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.environment.set('token', body.token);",
+                  "  pm.environment.set('societyId', body.societyId);",
+                  "  pm.test('Society registered', () => pm.expect(body.token).to.be.a('string'));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@greenvalley.com\",\n  \"password\": \"Admin@123\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.environment.set('token', body.token);",
+                  "  pm.environment.set('societyId', body.societyId);",
+                  "  pm.test('Logged in', () => pm.expect(body.token).to.be.a('string'));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login as Super Admin",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"superadmin@society.app\",\n  \"password\": \"Admin@123\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.environment.set('superAdminToken', body.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register User - Guard",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/register-user", "host": ["{{baseUrl}}"], "path": ["auth", "register-user"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ramesh Kumar\",\n  \"email\": \"guard2@greenvalley.com\",\n  \"password\": \"Guard@123\",\n  \"phone\": \"9876500005\",\n  \"role\": \"GUARD\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Register User - Resident",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/register-user", "host": ["{{baseUrl}}"], "path": ["auth", "register-user"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Vikram Singh\",\n  \"email\": \"resident2@greenvalley.com\",\n  \"password\": \"Resident@123\",\n  \"phone\": \"9876500006\",\n  \"role\": \"RESIDENT\",\n  \"blockName\": \"A\",\n  \"flatNumber\": \"101\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Societies (Super Admin)",
+      "item": [
+        {
+          "name": "Get All Societies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/societies", "host": ["{{baseUrl}}"], "path": ["societies"] },
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{superAdminToken}}", "type": "string" }] }
+          }
+        },
+        {
+          "name": "Get Society By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/societies/{{societyId}}", "host": ["{{baseUrl}}"], "path": ["societies", "{{societyId}}"] }
+          }
+        },
+        {
+          "name": "Update Society",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/societies/{{societyId}}", "host": ["{{baseUrl}}"], "path": ["societies", "{{societyId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"city\": \"Bengaluru\",\n  \"active\": true\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/users", "host": ["{{baseUrl}}"], "path": ["users"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  if (body.length > 0) pm.environment.set('userId', body[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get User By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/users/{{userId}}", "host": ["{{baseUrl}}"], "path": ["users", "{{userId}}"] }
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/users/{{userId}}", "host": ["{{baseUrl}}"], "path": ["users", "{{userId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"9999900000\",\n  \"active\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/users/{{userId}}", "host": ["{{baseUrl}}"], "path": ["users", "{{userId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Flats",
+      "item": [
+        {
+          "name": "Create Flat",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/flats", "host": ["{{baseUrl}}"], "path": ["flats"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"blockName\": \"C\",\n  \"flatNumber\": \"501\",\n  \"ownerName\": \"Sunita Rao\",\n  \"ownerPhone\": \"9876500007\",\n  \"occupied\": true\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.environment.set('flatId', body.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Flats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/flats", "host": ["{{baseUrl}}"], "path": ["flats"] }
+          }
+        },
+        {
+          "name": "Get Flat By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/flats/{{flatId}}", "host": ["{{baseUrl}}"], "path": ["flats", "{{flatId}}"] }
+          }
+        },
+        {
+          "name": "Update Flat",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/flats/{{flatId}}", "host": ["{{baseUrl}}"], "path": ["flats", "{{flatId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"blockName\": \"C\",\n  \"flatNumber\": \"501\",\n  \"ownerName\": \"Sunita Rao\",\n  \"ownerPhone\": \"9876500007\",\n  \"occupied\": false\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Flat",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/flats/{{flatId}}", "host": ["{{baseUrl}}"], "path": ["flats", "{{flatId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "File Upload",
+      "item": [
+        {
+          "name": "Upload Photo",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/upload/photo", "host": ["{{baseUrl}}"], "path": ["upload", "photo"] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [{ "key": "file", "type": "file", "src": [] }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.environment.set('photoUrl', body.url);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Visitor Gate Entries",
+      "item": [
+        {
+          "name": "Create Visitor Entry",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/visitors", "host": ["{{baseUrl}}"], "path": ["visitors"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"visitorName\": \"Rahul Verma\",\n  \"visitorPhone\": \"9998887770\",\n  \"purpose\": \"Guest\",\n  \"vehicleNumber\": \"KA01AB1234\",\n  \"flatToVisit\": \"204\",\n  \"blockToVisit\": \"A\",\n  \"hostName\": \"Priya Sharma\",\n  \"photoUrl\": \"{{photoUrl}}\",\n  \"gateNumber\": \"1\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.environment.set('visitorId', body.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Visitors",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/visitors", "host": ["{{baseUrl}}"], "path": ["visitors"] }
+          }
+        },
+        {
+          "name": "Get Pending Visitors",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/visitors?status=PENDING",
+              "host": ["{{baseUrl}}"],
+              "path": ["visitors"],
+              "query": [{ "key": "status", "value": "PENDING" }]
+            }
+          }
+        },
+        {
+          "name": "Get Visitor By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/visitors/{{visitorId}}", "host": ["{{baseUrl}}"], "path": ["visitors", "{{visitorId}}"] }
+          }
+        },
+        {
+          "name": "Approve Visitor",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/visitors/{{visitorId}}/approve", "host": ["{{baseUrl}}"], "path": ["visitors", "{{visitorId}}", "approve"] }
+          }
+        },
+        {
+          "name": "Reject Visitor",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/visitors/{{visitorId}}/reject", "host": ["{{baseUrl}}"], "path": ["visitors", "{{visitorId}}", "reject"] }
+          }
+        },
+        {
+          "name": "Checkout Visitor",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/visitors/{{visitorId}}/checkout", "host": ["{{baseUrl}}"], "path": ["visitors", "{{visitorId}}", "checkout"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delivery Entries (Zomato/Swiggy/Courier)",
+      "item": [
+        {
+          "name": "Create Delivery Entry",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/deliveries", "host": ["{{baseUrl}}"], "path": ["deliveries"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryPartner\": \"ZOMATO\",\n  \"agentName\": \"Suresh\",\n  \"agentPhone\": \"9998887771\",\n  \"orderId\": \"ZOM123456\",\n  \"flatNumber\": \"204\",\n  \"blockName\": \"A\",\n  \"photoUrl\": \"{{photoUrl}}\",\n  \"gateNumber\": \"1\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.environment.set('deliveryId', body.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Deliveries",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/deliveries", "host": ["{{baseUrl}}"], "path": ["deliveries"] }
+          }
+        },
+        {
+          "name": "Get Deliveries Currently IN",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/deliveries?status=IN",
+              "host": ["{{baseUrl}}"],
+              "path": ["deliveries"],
+              "query": [{ "key": "status", "value": "IN" }]
+            }
+          }
+        },
+        {
+          "name": "Get Delivery By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/deliveries/{{deliveryId}}", "host": ["{{baseUrl}}"], "path": ["deliveries", "{{deliveryId}}"] }
+          }
+        },
+        {
+          "name": "Checkout Delivery",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/deliveries/{{deliveryId}}/checkout", "host": ["{{baseUrl}}"], "path": ["deliveries", "{{deliveryId}}", "checkout"] }
+          }
+        }
+      ]
+    }
+  ]
+}

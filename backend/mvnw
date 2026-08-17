@@ -1,0 +1,28 @@
+#!/bin/sh
+# ----------------------------------------------------------------------------
+# Apache Maven Wrapper startup script (POSIX)
+# ----------------------------------------------------------------------------
+set -euf
+[ "${MVNW_VERBOSE-}" != debug ] || set -x
+
+wrapperJarPath="$(dirname "$0")/.mvn/wrapper/maven-wrapper.jar"
+wrapperPropsPath="$(dirname "$0")/.mvn/wrapper/maven-wrapper.properties"
+wrapperUrl=$(grep '^wrapperUrl=' "$wrapperPropsPath" | cut -d'=' -f2-)
+
+if [ ! -f "$wrapperJarPath" ]; then
+    echo "Downloading Maven Wrapper jar..." 1>&2
+    if command -v curl >/dev/null 2>&1; then
+        curl -fsSL -o "$wrapperJarPath" "$wrapperUrl"
+    elif command -v wget >/dev/null 2>&1; then
+        wget -q -O "$wrapperJarPath" "$wrapperUrl"
+    else
+        echo "Error: curl or wget required to bootstrap Maven Wrapper" 1>&2
+        exit 1
+    fi
+fi
+
+JAVA_EXE="${JAVA_HOME:+$JAVA_HOME/bin/}java"
+exec "$JAVA_EXE" \
+    -classpath "$wrapperJarPath" \
+    "-Dmaven.multiModuleProjectDirectory=$(dirname "$0")" \
+    org.apache.maven.wrapper.MavenWrapperMain "$@"
