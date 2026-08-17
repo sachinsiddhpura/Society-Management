@@ -1,6 +1,7 @@
 package com.society.management.service;
 
 import com.society.management.dto.request.VisitorEntryRequest;
+import com.society.management.dto.response.VisitorEntryResponse;
 import com.society.management.entity.Society;
 import com.society.management.entity.User;
 import com.society.management.entity.VisitorEntry;
@@ -28,23 +29,20 @@ public class VisitorEntryService {
     private final SocietyRepository societyRepository;
     private final UserRepository userRepository;
 
-    public List<VisitorEntry> findForActor(UserPrincipal actor, VisitorStatus status) {
+    public List<VisitorEntryResponse> findForActor(UserPrincipal actor, VisitorStatus status) {
         Long societyId = resolveSocietyId(actor);
-        if (status != null) {
-            return visitorEntryRepository.findBySocietyIdAndStatusOrderByEntryTimeDesc(societyId, status);
-        }
-        return visitorEntryRepository.findBySocietyIdOrderByEntryTimeDesc(societyId);
+        List<VisitorEntry> entries = status != null
+                ? visitorEntryRepository.findBySocietyIdAndStatusOrderByEntryTimeDesc(societyId, status)
+                : visitorEntryRepository.findBySocietyIdOrderByEntryTimeDesc(societyId);
+        return entries.stream().map(VisitorEntryResponse::from).toList();
     }
 
-    public VisitorEntry findById(Long id, UserPrincipal actor) {
-        VisitorEntry entry = visitorEntryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Visitor entry not found with id " + id));
-        assertAccess(entry, actor);
-        return entry;
+    public VisitorEntryResponse findById(Long id, UserPrincipal actor) {
+        return VisitorEntryResponse.from(loadEntity(id, actor));
     }
 
     @Transactional
-    public VisitorEntry create(VisitorEntryRequest req, UserPrincipal actor) {
+    public VisitorEntryResponse create(VisitorEntryRequest req, UserPrincipal actor) {
         Long societyId = resolveSocietyId(actor);
         Society society = societyRepository.findById(societyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Society not found"));
@@ -70,12 +68,12 @@ public class VisitorEntryService {
             entry.setCreatedByGuard(guard);
         }
 
-        return visitorEntryRepository.save(entry);
+        return VisitorEntryResponse.from(visitorEntryRepository.save(entry));
     }
 
     @Transactional
-    public VisitorEntry updateStatus(Long id, VisitorStatus status, UserPrincipal actor) {
-        VisitorEntry entry = findById(id, actor);
+    public VisitorEntryResponse updateStatus(Long id, VisitorStatus status, UserPrincipal actor) {
+        VisitorEntry entry = loadEntity(id, actor);
 
         if (entry.getStatus() == VisitorStatus.CHECKED_OUT) {
             throw new BadRequestException("This visitor has already checked out");
@@ -93,7 +91,14 @@ public class VisitorEntryService {
             entry.setExitTime(LocalDateTime.now());
         }
 
-        return visitorEntryRepository.save(entry);
+        return VisitorEntryResponse.from(visitorEntryRepository.save(entry));
+    }
+
+    private VisitorEntry loadEntity(Long id, UserPrincipal actor) {
+        VisitorEntry entry = visitorEntryRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Visitor entry not found with id " + id));
+        assertAccess(entry, actor);
+        return entry;
     }
 
     private Long resolveSocietyId(UserPrincipal actor) {

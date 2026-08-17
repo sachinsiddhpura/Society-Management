@@ -25,25 +25,24 @@ public class DeliveryEntryController {
     @GetMapping
     public List<DeliveryEntryResponse> getAll(@RequestParam(required = false) DeliveryStatus status,
                                                @AuthenticationPrincipal UserPrincipal actor) {
-        return deliveryEntryService.findForActor(actor, status).stream().map(DeliveryEntryResponse::from).toList();
+        return deliveryEntryService.findForActor(actor, status);
     }
 
     @GetMapping("/{id}")
     public DeliveryEntryResponse getById(@PathVariable Long id, @AuthenticationPrincipal UserPrincipal actor) {
-        return DeliveryEntryResponse.from(deliveryEntryService.findById(id, actor));
+        return deliveryEntryService.findById(id, actor);
     }
 
     @PostMapping
     @PreAuthorize("hasAnyRole('GUARD', 'SOCIETY_ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<DeliveryEntryResponse> create(@Valid @RequestBody DeliveryEntryRequest request,
                                                           @AuthenticationPrincipal UserPrincipal actor) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(DeliveryEntryResponse.from(deliveryEntryService.create(request, actor)));
+        return ResponseEntity.status(HttpStatus.CREATED).body(deliveryEntryService.create(request, actor));
     }
 
     @PutMapping("/{id}/checkout")
     @PreAuthorize("hasAnyRole('GUARD', 'SOCIETY_ADMIN', 'SUPER_ADMIN')")
     public DeliveryEntryResponse checkout(@PathVariable Long id, @AuthenticationPrincipal UserPrincipal actor) {
-        return DeliveryEntryResponse.from(deliveryEntryService.checkout(id, actor));
+        return deliveryEntryService.checkout(id, actor);
     }
 }

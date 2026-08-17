@@ -1,6 +1,7 @@
 package com.society.management.service;
 
 import com.society.management.dto.request.FlatRequest;
+import com.society.management.dto.response.FlatResponse;
 import com.society.management.entity.Flat;
 import com.society.management.entity.Society;
 import com.society.management.entity.User;
@@ -26,20 +27,17 @@ public class FlatService {
     private final SocietyRepository societyRepository;
     private final UserRepository userRepository;
 
-    public List<Flat> findForActor(UserPrincipal actor) {
+    public List<FlatResponse> findForActor(UserPrincipal actor) {
         Long societyId = resolveSocietyId(actor);
-        return flatRepository.findBySocietyId(societyId);
+        return flatRepository.findBySocietyId(societyId).stream().map(FlatResponse::from).toList();
     }
 
-    public Flat findById(Long id, UserPrincipal actor) {
-        Flat flat = flatRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Flat not found with id " + id));
-        assertAccess(flat, actor);
-        return flat;
+    public FlatResponse findById(Long id, UserPrincipal actor) {
+        return FlatResponse.from(loadEntity(id, actor));
     }
 
     @Transactional
-    public Flat create(FlatRequest req, UserPrincipal actor) {
+    public FlatResponse create(FlatRequest req, UserPrincipal actor) {
         Long societyId = resolveSocietyId(actor);
         if (flatRepository.existsBySocietyIdAndBlockNameAndFlatNumber(societyId, req.getBlockName(), req.getFlatNumber())) {
             throw new BadRequestException("This flat already exists in the society");
@@ -62,12 +60,12 @@ public class FlatService {
             flat.setResident(resident);
         }
 
-        return flatRepository.save(flat);
+        return FlatResponse.from(flatRepository.save(flat));
     }
 
     @Transactional
-    public Flat update(Long id, FlatRequest req, UserPrincipal actor) {
-        Flat flat = findById(id, actor);
+    public FlatResponse update(Long id, FlatRequest req, UserPrincipal actor) {
+        Flat flat = loadEntity(id, actor);
         flat.setBlockName(req.getBlockName());
         flat.setFlatNumber(req.getFlatNumber());
         flat.setOwnerName(req.getOwnerName());
@@ -82,13 +80,20 @@ public class FlatService {
             flat.setResident(null);
         }
 
-        return flatRepository.save(flat);
+        return FlatResponse.from(flatRepository.save(flat));
     }
 
     @Transactional
     public void delete(Long id, UserPrincipal actor) {
-        Flat flat = findById(id, actor);
+        Flat flat = loadEntity(id, actor);
         flatRepository.delete(flat);
+    }
+
+    private Flat loadEntity(Long id, UserPrincipal actor) {
+        Flat flat = flatRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Flat not found with id " + id));
+        assertAccess(flat, actor);
+        return flat;
     }
 
     private Long resolveSocietyId(UserPrincipal actor) {

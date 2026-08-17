@@ -24,26 +24,26 @@ public class FlatController {
 
     @GetMapping
     public List<FlatResponse> getAll(@AuthenticationPrincipal UserPrincipal actor) {
-        return flatService.findForActor(actor).stream().map(FlatResponse::from).toList();
+        return flatService.findForActor(actor);
     }
 
     @GetMapping("/{id}")
     public FlatResponse getById(@PathVariable Long id, @AuthenticationPrincipal UserPrincipal actor) {
-        return FlatResponse.from(flatService.findById(id, actor));
+        return flatService.findById(id, actor);
     }
 
     @PostMapping
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SOCIETY_ADMIN')")
     public ResponseEntity<FlatResponse> create(@Valid @RequestBody FlatRequest request,
                                                 @AuthenticationPrincipal UserPrincipal actor) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(FlatResponse.from(flatService.create(request, actor)));
+        return ResponseEntity.status(HttpStatus.CREATED).body(flatService.create(request, actor));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SOCIETY_ADMIN')")
     public FlatResponse update(@PathVariable Long id, @Valid @RequestBody FlatRequest request,
                                 @AuthenticationPrincipal UserPrincipal actor) {
-        return FlatResponse.from(flatService.update(id, request, actor));
+        return flatService.update(id, request, actor);
     }
 
     @DeleteMapping("/{id}")

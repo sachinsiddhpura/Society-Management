@@ -1,6 +1,7 @@
 package com.society.management.service;
 
 import com.society.management.dto.request.DeliveryEntryRequest;
+import com.society.management.dto.response.DeliveryEntryResponse;
 import com.society.management.entity.DeliveryEntry;
 import com.society.management.entity.Society;
 import com.society.management.entity.User;
@@ -28,23 +29,20 @@ public class DeliveryEntryService {
     private final SocietyRepository societyRepository;
     private final UserRepository userRepository;
 
-    public List<DeliveryEntry> findForActor(UserPrincipal actor, DeliveryStatus status) {
+    public List<DeliveryEntryResponse> findForActor(UserPrincipal actor, DeliveryStatus status) {
         Long societyId = resolveSocietyId(actor);
-        if (status != null) {
-            return deliveryEntryRepository.findBySocietyIdAndStatusOrderByEntryTimeDesc(societyId, status);
-        }
-        return deliveryEntryRepository.findBySocietyIdOrderByEntryTimeDesc(societyId);
+        List<DeliveryEntry> entries = status != null
+                ? deliveryEntryRepository.findBySocietyIdAndStatusOrderByEntryTimeDesc(societyId, status)
+                : deliveryEntryRepository.findBySocietyIdOrderByEntryTimeDesc(societyId);
+        return entries.stream().map(DeliveryEntryResponse::from).toList();
     }
 
-    public DeliveryEntry findById(Long id, UserPrincipal actor) {
-        DeliveryEntry entry = deliveryEntryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Delivery entry not found with id " + id));
-        assertAccess(entry, actor);
-        return entry;
+    public DeliveryEntryResponse findById(Long id, UserPrincipal actor) {
+        return DeliveryEntryResponse.from(loadEntity(id, actor));
     }
 
     @Transactional
-    public DeliveryEntry create(DeliveryEntryRequest req, UserPrincipal actor) {
+    public DeliveryEntryResponse create(DeliveryEntryRequest req, UserPrincipal actor) {
         Long societyId = resolveSocietyId(actor);
         Society society = societyRepository.findById(societyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Society not found"));
@@ -70,18 +68,25 @@ public class DeliveryEntryService {
             entry.setCreatedByGuard(guard);
         }
 
-        return deliveryEntryRepository.save(entry);
+        return DeliveryEntryResponse.from(deliveryEntryRepository.save(entry));
     }
 
     @Transactional
-    public DeliveryEntry checkout(Long id, UserPrincipal actor) {
-        DeliveryEntry entry = findById(id, actor);
+    public DeliveryEntryResponse checkout(Long id, UserPrincipal actor) {
+        DeliveryEntry entry = loadEntity(id, actor);
         if (entry.getStatus() == DeliveryStatus.OUT) {
             throw new BadRequestException("This delivery has already checked out");
         }
         entry.setStatus(DeliveryStatus.OUT);
         entry.setExitTime(LocalDateTime.now());
-        return deliveryEntryRepository.save(entry);
+        return DeliveryEntryResponse.from(deliveryEntryRepository.save(entry));
+    }
+
+    private DeliveryEntry loadEntity(Long id, UserPrincipal actor) {
+        DeliveryEntry entry = deliveryEntryRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Delivery entry not found with id " + id));
+        assertAccess(entry, actor);
+        return entry;
     }
 
     private Long resolveSocietyId(UserPrincipal actor) {

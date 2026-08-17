@@ -25,37 +25,36 @@ public class VisitorEntryController {
     @GetMapping
     public List<VisitorEntryResponse> getAll(@RequestParam(required = false) VisitorStatus status,
                                               @AuthenticationPrincipal UserPrincipal actor) {
-        return visitorEntryService.findForActor(actor, status).stream().map(VisitorEntryResponse::from).toList();
+        return visitorEntryService.findForActor(actor, status);
     }
 
     @GetMapping("/{id}")
     public VisitorEntryResponse getById(@PathVariable Long id, @AuthenticationPrincipal UserPrincipal actor) {
-        return VisitorEntryResponse.from(visitorEntryService.findById(id, actor));
+        return visitorEntryService.findById(id, actor);
     }
 
     @PostMapping
     @PreAuthorize("hasAnyRole('GUARD', 'SOCIETY_ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<VisitorEntryResponse> create(@Valid @RequestBody VisitorEntryRequest request,
                                                          @AuthenticationPrincipal UserPrincipal actor) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(VisitorEntryResponse.from(visitorEntryService.create(request, actor)));
+        return ResponseEntity.status(HttpStatus.CREATED).body(visitorEntryService.create(request, actor));
     }
 
     @PutMapping("/{id}/approve")
     @PreAuthorize("hasAnyRole('RESIDENT', 'SOCIETY_ADMIN', 'SUPER_ADMIN')")
     public VisitorEntryResponse approve(@PathVariable Long id, @AuthenticationPrincipal UserPrincipal actor) {
-        return VisitorEntryResponse.from(visitorEntryService.updateStatus(id, VisitorStatus.APPROVED, actor));
+        return visitorEntryService.updateStatus(id, VisitorStatus.APPROVED, actor);
     }
 
     @PutMapping("/{id}/reject")
     @PreAuthorize("hasAnyRole('RESIDENT', 'SOCIETY_ADMIN', 'SUPER_ADMIN')")
     public VisitorEntryResponse reject(@PathVariable Long id, @AuthenticationPrincipal UserPrincipal actor) {
-        return VisitorEntryResponse.from(visitorEntryService.updateStatus(id, VisitorStatus.REJECTED, actor));
+        return visitorEntryService.updateStatus(id, VisitorStatus.REJECTED, actor);
     }
 
     @PutMapping("/{id}/checkout")
     @PreAuthorize("hasAnyRole('GUARD', 'SOCIETY_ADMIN', 'SUPER_ADMIN')")
     public VisitorEntryResponse checkout(@PathVariable Long id, @AuthenticationPrincipal UserPrincipal actor) {
-        return VisitorEntryResponse.from(visitorEntryService.updateStatus(id, VisitorStatus.CHECKED_OUT, actor));
+        return visitorEntryService.updateStatus(id, VisitorStatus.CHECKED_OUT, actor);
     }
 }

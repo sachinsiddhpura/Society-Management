@@ -28,7 +28,16 @@ pipeline {
         stage('Backend: compile & package') {
             steps {
                 dir('backend') {
-                    sh 'mvn -B -DskipTests clean package'
+                    // Amazon Linux's `maven` package pulls in Java 17 as its own
+                    // dependency, which would otherwise shadow the Java 21 this
+                    // project requires. Point JAVA_HOME at the Corretto 21 devel
+                    // package explicitly rather than relying on whatever `java`/
+                    // `javac` happen to resolve to on PATH.
+                    sh '''
+                        export JAVA_HOME=$(dirname $(dirname $(rpm -ql java-21-amazon-corretto-devel | grep -m1 "bin/javac$")))
+                        echo "Using JAVA_HOME=$JAVA_HOME"
+                        mvn -B -DskipTests clean package
+                    '''
                 }
             }
         }

@@ -98,6 +98,18 @@ sudo dnf install -y maven
 mvn -v
 ```
 
+Amazon Linux 2023's `maven` package pulls in **Java 17** as its own
+dependency (its RPM is literally named `maven-amazon-corretto17`), which
+shadows the Java 21 runtime installed above and isn't enough to compile
+this project (`pom.xml` targets Java 21). Install the Java 21 *compiler*
+package explicitly — the Jenkinsfile's build stage looks it up by name and
+points `JAVA_HOME` at it for the `mvn` invocation, rather than relying on
+whatever `java`/`javac` happen to be first on `PATH`:
+
+```bash
+sudo dnf install -y java-21-amazon-corretto-devel
+```
+
 ```bash
 curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
 sudo dnf install -y nodejs
@@ -110,6 +122,24 @@ Confirm Jenkins is up:
 ```bash
 sudo systemctl status jenkins
 ```
+
+**Add swap space.** AWS EC2 instances ship with 0 swap configured by
+default. Jenkins' built-in node monitor treats that as unhealthy and takes
+the "Built-In Node" offline — builds will queue forever with "Waiting for
+next available executor" and never run. Maven/npm builds are also memory-
+hungry enough on a `t3.small` (2GB RAM) that swap meaningfully helps avoid
+out-of-memory kills mid-build:
+
+```bash
+sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+echo '/swapfile swap swap defaults 0 0' | sudo tee -a /etc/fstab
+free -h
+```
+
+`free -h` should now show `Swap: 2.0Gi` instead of `0B`.
 
 ---
 
@@ -272,6 +302,19 @@ previously-running deployment is left untouched.
 
 ## Troubleshooting
 
+- **Build stuck as "Waiting for next available executor" / "Built-In Node"
+  shows offline (red X) under Build Executor Status** — the instance has no
+  swap space and Jenkins' node monitor marked it unhealthy. Add swap (see
+  the command block in Step 3) and run `sudo systemctl restart jenkins`;
+  the node should come back online within a minute and the queued build
+  will start automatically.
+- **`error: release version 21 not supported` during the backend build
+  stage** — `mvn` is compiling with Java 17 instead of 21 (Amazon Linux's
+  `maven` package depends on Java 17). Confirm
+  `java-21-amazon-corretto-devel` is installed (Step 3) — the Jenkinsfile's
+  build stage looks up that package's `javac` path and sets `JAVA_HOME`
+  explicitly before invoking `mvn`, so it doesn't matter what the system
+  default `java`/`javac` point to.
 - **Webhook shows a red X in GitHub's Recent Deliveries** — Jenkins isn't
   reachable on `:8080` from the internet. Re-check `jenkins-sg` allows
   inbound `8080` from `0.0.0.0/0`, and that `sudo systemctl status jenkins`
