@@ -3,6 +3,7 @@ import Navbar from './components/Navbar.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import { useAuth } from './context/AuthContext.jsx'
 
+import LandingPage from './pages/LandingPage.jsx'
 import Login from './pages/Login.jsx'
 import RegisterSociety from './pages/RegisterSociety.jsx'
 import Dashboard from './pages/Dashboard.jsx'
@@ -18,16 +19,27 @@ import NotFound from './pages/NotFound.jsx'
 export default function App() {
   const { user } = useAuth()
 
+  // Guests get the marketing landing page, login, and register-society
+  // screens full-bleed - none of these should be squeezed into the
+  // app shell's max-w-6xl container, which only makes sense once signed in.
+  if (!user) {
+    return (
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register-society" element={<RegisterSociety />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    )
+  }
+
   return (
     <div className="min-h-screen">
       <Navbar />
-      <main className="max-w-6xl mx-auto p-4">
+      <main className="max-w-6xl mx-auto p-4 pb-20 sm:pb-4">
         <Routes>
-          <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <Login />} />
-          <Route
-            path="/register-society"
-            element={user ? <Navigate to="/dashboard" /> : <RegisterSociety />}
-          />
+          <Route path="/login" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/register-society" element={<Navigate to="/dashboard" replace />} />
 
           <Route
             path="/dashboard"
@@ -97,7 +109,7 @@ export default function App() {
             }
           />
 
-          <Route path="/" element={<Navigate to={user ? '/dashboard' : '/login'} replace />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

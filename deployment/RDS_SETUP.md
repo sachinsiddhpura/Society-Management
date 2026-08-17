@@ -183,6 +183,50 @@ docker volume rm deployment_mysql_data
 
 ---
 
+## Viewing your data
+
+RDS isn't publicly reachable from your laptop (by design — keep it that
+way), so browsing tables needs to go through the app EC2 instance one way
+or another.
+
+**Quick command-line, no extra tools.** SSH into the app EC2 instance,
+then:
+
+```bash
+docker run --rm -it mysql:8.0 mysql -h YOUR_RDS_ENDPOINT -u admin -p'YOUR_PASSWORD' society_management
+```
+
+Drops you into an interactive `mysql>` prompt:
+
+```sql
+SHOW TABLES;
+SELECT * FROM societies;
+SELECT * FROM users;
+SELECT * FROM visitor_entries ORDER BY entry_time DESC LIMIT 20;
+```
+
+`exit` to leave.
+
+**A GUI (MySQL Workbench, DBeaver, etc.) from your Windows laptop.** Nicer
+for browsing, needs an SSH tunnel through the app server first. Run this
+on your **Windows machine** (not the EC2 instance) — using local port
+**3307**, not 3306, since a local MySQL80 service is likely already using
+3306 on your own machine:
+
+```bash
+ssh -i "your-key.pem" -L 3307:YOUR_RDS_ENDPOINT:3306 ec2-user@YOUR_APP_EC2_PUBLIC_IP
+```
+
+Leave that terminal window open — it *is* the tunnel; closing it
+disconnects everything. Then point your GUI client at:
+- Host: `127.0.0.1`
+- Port: `3307`
+- Username: `admin`
+- Password: your `DB_PASSWORD`
+- Database: `society_management`
+
+---
+
 ## Troubleshooting
 
 - **Backend can't connect / connection timed out** — almost always the

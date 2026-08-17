@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
+import Alert from '../components/Alert.jsx'
 
 const emptyForm = {
   societyName: '',
@@ -36,11 +37,15 @@ export default function RegisterSociety() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto mt-10 bg-white p-6 rounded-lg shadow">
-      <h1 className="text-xl font-semibold mb-1">Register your Society</h1>
-      <p className="text-sm text-slate-500 mb-4">
-        This creates your society and its first Society Admin account.
-      </p>
+    <div className="min-h-screen bg-gradient-to-br from-brand-100 via-white to-brand-50 flex items-center justify-center p-4 py-10">
+      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl p-6 sm:p-8">
+        <Link to="/" className="text-sm font-semibold text-brand-800">
+          🏢 Society Manager
+        </Link>
+        <h1 className="text-xl font-semibold mt-4 mb-1">Register your Society</h1>
+        <p className="text-sm text-slate-500 mb-4">
+          This creates your society and its first Society Admin account.
+        </p>
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Society Name" required value={form.societyName} onChange={set('societyName')} />
@@ -77,7 +82,11 @@ export default function RegisterSociety() {
           onChange={set('adminPassword')}
         />
 
-        {error && <p className="text-red-600 text-sm sm:col-span-2">{error}</p>}
+        {error && (
+          <div className="sm:col-span-2">
+            <Alert type="error">{error}</Alert>
+          </div>
+        )}
 
         <button
           type="submit"
@@ -88,12 +97,13 @@ export default function RegisterSociety() {
         </button>
       </form>
 
-      <p className="text-sm text-slate-500 mt-4 text-center">
-        Already registered?{' '}
-        <Link to="/login" className="text-brand-600 font-medium">
-          Sign in
-        </Link>
-      </p>
+        <p className="text-sm text-slate-500 mt-4 text-center">
+          Already registered?{' '}
+          <Link to="/login" className="text-brand-600 font-medium">
+            Sign in
+          </Link>
+        </p>
+      </div>
     </div>
   )
 }
