@@ -5,6 +5,11 @@ Spring Boot backend + React/nginx frontend) to a single AWS EC2 instance using
 Docker Compose. It's the simplest path to a working production deployment;
 scaling notes (RDS, ALB, ECS) are at the bottom.
 
+**Database update:** this app now runs against Amazon RDS instead of a
+`mysql` container — see [`RDS_SETUP.md`](RDS_SETUP.md). The "Managed
+database" bullet under Scaling below is done; treat MySQL as already
+external to `docker-compose.yml` throughout this guide.
+
 Everything below assumes you're running commands from your local machine
 (AWS CLI + SSH) and then on the EC2 instance itself. Ask me to walk through
 any step interactively when you're ready — I can run the local/AWS CLI
@@ -205,11 +210,14 @@ docker image prune -f
 
 ## 8. Backups
 
-Back up the MySQL volume regularly:
+MySQL now lives in RDS, which takes automated daily backups on its own
+(7-day retention by default — see `RDS_SETUP.md`), so no manual database
+backup step is needed here. A one-off manual export still works the same
+way against the RDS endpoint if you ever want a local copy:
 
 ```bash
-docker exec society-mysql sh -c \
-  'exec mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" society_management' \
+docker run --rm mysql:8.0 \
+  mysqldump -h YOUR_RDS_ENDPOINT -u admin -p'YOUR_PASSWORD' society_management \
   > backup-$(date +%F).sql
 ```
 
@@ -224,8 +232,8 @@ docker run --rm -v deployment_uploads_data:/data -v $(pwd):/backup \
 
 ## 9. Scaling beyond a single EC2 instance (later)
 
-- **Managed database**: move MySQL to Amazon RDS, point `DB_HOST` at the RDS
-  endpoint, and drop the `mysql` service from `docker-compose.yml`.
+- ~~**Managed database**: move MySQL to Amazon RDS~~ — done, see
+  [`RDS_SETUP.md`](RDS_SETUP.md).
 - **Object storage for photos**: swap `FileStorageService` to write to S3
   instead of the local `/app/uploads` volume, so backend containers stay
   stateless and can scale horizontally.
