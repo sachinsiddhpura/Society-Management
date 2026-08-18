@@ -221,12 +221,10 @@ docker run --rm mysql:8.0 \
   > backup-$(date +%F).sql
 ```
 
-Back up uploaded photos (Docker named volume `uploads_data`):
-
-```bash
-docker run --rm -v deployment_uploads_data:/data -v $(pwd):/backup \
-  alpine tar czf /backup/uploads-$(date +%F).tar.gz -C /data .
-```
+Uploaded photos live in S3 now (see `S3_SETUP.md`), which is itself
+durable object storage with 11 nines of durability — no separate backup
+step needed for them either. If you want extra protection, S3 versioning
+or cross-region replication can be turned on for the bucket later.
 
 ---
 
@@ -234,8 +232,8 @@ docker run --rm -v deployment_uploads_data:/data -v $(pwd):/backup \
 
 - ~~**Managed database**: move MySQL to Amazon RDS~~ — done, see
   [`RDS_SETUP.md`](RDS_SETUP.md).
-- **Object storage for photos**: swap `FileStorageService` to write to S3
-  instead of the local `/app/uploads` volume, so backend containers stay
+- ~~**Object storage for photos**: swap `FileStorageService` to write to
+  S3~~ — done, see [`S3_SETUP.md`](S3_SETUP.md). The backend is now fully
   stateless and can scale horizontally.
 - **Container orchestration**: push images to Amazon ECR and run them on
   ECS Fargate or EKS behind an Application Load Balancer instead of a single

@@ -202,6 +202,25 @@ the app EC2 instance's original `.pem` file, confirm Username is
 
 ---
 
+## Photo upload fails / broken image after moving to S3
+
+- **Upload itself errors** (check `docker compose logs backend`) → the
+  app EC2 instance's IAM role either isn't attached, or its policy's
+  `Resource` ARN doesn't exactly match the bucket name. Confirm the role
+  is visible from inside the container:
+  ```bash
+  docker exec -it society-backend curl -s http://169.254.169.254/latest/meta-data/iam/security-credentials/
+  ```
+  Empty output means the role isn't attached (EC2 → instance → Actions →
+  Security → Modify IAM role).
+- **Upload succeeds but the `<img>` shows broken in the browser** → the
+  S3 bucket policy's `Resource` doesn't match, or "Block Public Access"
+  wasn't unchecked for the bucket. See `S3_SETUP.md` Steps 1-2.
+- **`S3_BUCKET_NAME is required` error on `docker compose up`** → `.env`
+  on the app server wasn't updated with `S3_BUCKET_NAME`/`AWS_REGION`.
+
+---
+
 ## Backup / restore quick reference
 
 One-off manual export of the RDS database:

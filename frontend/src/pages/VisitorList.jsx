@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import axiosClient from '../api/axiosClient'
 import { useAuth } from '../context/AuthContext.jsx'
+import { resolvePhotoUrl } from '../utils/photoUrl.js'
 
 const statusColors = {
   PENDING: 'bg-amber-100 text-amber-800',
@@ -88,7 +89,7 @@ export default function VisitorList() {
                   <td className="p-3">
                     {v.photoUrl ? (
                       <img
-                        src={`${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:8080'}${v.photoUrl}`}
+                        src={resolvePhotoUrl(v.photoUrl)}
                         alt={v.visitorName}
                         className="w-10 h-10 rounded object-cover"
                       />

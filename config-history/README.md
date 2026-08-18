@@ -30,3 +30,4 @@ represents and what superseded it.
 | # | What it captures | Superseded by |
 |---|---|---|
 | 01 | MySQL running as a Docker container alongside the app on one EC2 instance | [`RDS_SETUP.md`](../deployment/RDS_SETUP.md) — MySQL moved to Amazon RDS |
+| 02 | Visitor/delivery photos stored on the app EC2 instance's local disk | [`S3_SETUP.md`](../deployment/S3_SETUP.md) — photos moved to Amazon S3 |

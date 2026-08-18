@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import axiosClient from '../api/axiosClient'
 import { useAuth } from '../context/AuthContext.jsx'
+import { resolvePhotoUrl } from '../utils/photoUrl.js'
 
 export default function DeliveryList() {
   const { user } = useAuth()
@@ -79,7 +80,7 @@ export default function DeliveryList() {
                   <td className="p-3">
                     {d.photoUrl ? (
                       <img
-                        src={`${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:8080'}${d.photoUrl}`}
+                        src={resolvePhotoUrl(d.photoUrl)}
                         alt={d.agentName}
                         className="w-10 h-10 rounded object-cover"
                       />

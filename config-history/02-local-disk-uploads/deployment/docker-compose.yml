@@ -15,8 +15,9 @@ services:
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-86400000}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost}
-      S3_BUCKET_NAME: ${S3_BUCKET_NAME:?S3_BUCKET_NAME is required - see S3_SETUP.md}
-      AWS_REGION: ${AWS_REGION:-ap-south-1}
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - uploads_data:/app/uploads
     ports:
       - "8080:8080"
 
@@ -31,3 +32,6 @@ services:
       - backend
     ports:
       - "80:80"
+
+volumes:
+  uploads_data:

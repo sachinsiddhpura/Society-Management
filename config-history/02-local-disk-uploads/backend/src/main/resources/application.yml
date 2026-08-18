@@ -39,9 +39,7 @@ app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
   upload:
-    s3:
-      bucket: ${S3_BUCKET_NAME:society-management-photos}
-      region: ${AWS_REGION:ap-south-1}
+    dir: ${UPLOAD_DIR:./uploads}
 
 logging:
   level:

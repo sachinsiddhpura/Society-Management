@@ -1,33 +1,25 @@
 package com.society.management.service;
 
 import com.society.management.exception.BadRequestException;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.S3Exception;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.util.Set;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class FileStorageService {
 
-    private final S3Client s3Client;
-
-    @Value("${app.upload.s3.bucket}")
-    private String bucket;
-
-    @Value("${app.upload.s3.region}")
-    private String region;
+    @Value("${app.upload.dir}")
+    private String uploadDir;
 
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of("jpg", "jpeg", "png", "webp");
     private static final long MAX_SIZE_BYTES = 5L * 1024 * 1024;
@@ -50,24 +42,19 @@ public class FileStorageService {
             throw new BadRequestException("Only JPG, JPEG, PNG and WEBP images are allowed");
         }
 
-        // Random UUID keys, no bucket listing granted to the public - the
-        // upload is unguessable even though individual object URLs are
-        // publicly readable. See deployment/S3_SETUP.md for the tradeoff.
-        String key = "uploads/" + LocalDate.now() + "/" + UUID.randomUUID() + "." + extension;
-
         try {
-            PutObjectRequest request = PutObjectRequest.builder()
-                    .bucket(bucket)
-                    .key(key)
-                    .contentType(file.getContentType())
-                    .build();
+            String subDir = LocalDate.now().toString();
+            Path targetDir = Path.of(uploadDir, subDir);
+            Files.createDirectories(targetDir);
 
-            s3Client.putObject(request, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
-        } catch (IOException | S3Exception e) {
-            log.error("Failed to upload photo to S3", e);
+            String fileName = UUID.randomUUID() + "." + extension;
+            Path targetPath = targetDir.resolve(fileName);
+            Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+
+            return "/uploads/" + subDir + "/" + fileName;
+        } catch (IOException e) {
+            log.error("Failed to store uploaded file", e);
             throw new BadRequestException("Failed to store uploaded file");
         }
-
-        return "https://" + bucket + ".s3." + region + ".amazonaws.com/" + key;
     }
 }
