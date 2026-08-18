@@ -129,10 +129,11 @@ the app server can connect" rather than "anyone can connect."
 
 ## Jenkins build queued forever ("Waiting for next available executor")
 
-Jenkins' built-in node monitor takes the node offline automatically when
-an EC2 instance has **0 swap configured** (the AWS default). Check
-**Manage Jenkins → Nodes → Built-in Node** — if it shows offline, this is
-almost certainly why. Fix, on the **Jenkins EC2 instance**:
+Jenkins' built-in **"Free Swap Space" node monitor** takes the node
+offline automatically when free swap drops too low. First-time cause: an
+EC2 instance has **0 swap configured** by default. Check **Manage Jenkins
+→ Nodes → Built-in Node** — if it shows offline, this is almost certainly
+why. Fix, on the **Jenkins EC2 instance**:
 
 ```bash
 sudo fallocate -l 2G /swapfile
@@ -146,6 +147,30 @@ sudo systemctl restart jenkins
 
 `free -h` should show `Swap: 2.0Gi` instead of `0B`. Give it 30-60 seconds
 after the restart, then refresh the Jenkins dashboard.
+
+**If this keeps recurring** even with swap configured: on a `t3.small`
+(2GB RAM), Maven/npm builds can eat into swap faster than it gets
+reclaimed between runs, so the monitor re-triggers over and over. Dipping
+into swap during a build here is expected and harmless, not real
+unhealthiness — so stop the monitor from policing it, and give it more
+headroom:
+
+1. **Manage Jenkins → Nodes** → click the small monitor/gear icon at the
+   top-right of the nodes table ("Node Monitors") → uncheck **Free Swap
+   Space** → Save.
+2. Bump swap 2GB → 4GB:
+   ```bash
+   sudo swapoff /swapfile
+   sudo rm /swapfile
+   sudo fallocate -l 4G /swapfile
+   sudo chmod 600 /swapfile
+   sudo mkswap /swapfile
+   sudo swapon /swapfile
+   free -h
+   ```
+   (The `/etc/fstab` entry from the first fix already points at
+   `/swapfile`, so it still persists across reboots without further
+   changes.)
 
 ## Jenkins pipeline fails with `release version 21 not supported`
 
